@@ -1,0 +1,65 @@
+<!DOCTYPE>
+<html>
+  <head>
+    <script src="https://SWI-Prolog.github.io/npm-swipl-wasm/3/3/0/index.js"></script>
+    <script>
+      function msg() {
+          const msg = Array.from(arguments).join(" ");
+          document.getElementById("logs").innerHTML += `<div>${msg}</div>`;
+      }
+      function init() {
+          const day = location.hash.match("#(\\d+)")[1];
+          if(typeof(day)==="string") {
+              (async () => {
+                  const swipl = await SWIPL({arguments: ["-q"],
+                                             on_output: (str,_)=>msg(str)});
+                  window.Prolog = swipl.prolog;
+                  window.GFX = document.getElementById("gfx");
+                  
+                  swipl.prolog.consult(`day${day}`).then((ok,err)=>{
+                      msg(`Code loaded: day${day}.pl`);
+                      fetch(`day${day}.txt`)
+                          .then((response) => response.text())
+                          .then((text) => {
+                              msg(`Input loaded: day${day}.txt`);
+                              Prolog.query("set_day_input(In)", {In: text}).once()
+                          });
+                  });
+              })();
+                            
+          } else {
+              msg("Add day number to hash, eg. #1")
+          }
+      }
+      function query(Goal, Result) {
+          Result.innerHTML = 'Calculating...';
+          let q = Prolog.query(Goal).once();
+          console.log(q);
+          if(q.success === false) {
+              msg("Goal", Goal, "didn't succeed :(")
+          } else if (q.error === true) {
+              msg("Error while calculating:", q.message);
+          } else {
+              let str = Prolog.query("str(Answer, Text)", {Answer: q.Answer}).once();
+              let txt = str.Text.toString();
+              document.getElementById(Result).innerText = txt;
+          }
+      }
+      
+      function part1() {
+          query(`part1(Answer)`, "part1");
+      }
+      function part2() {
+          query("part2(Answer)", "part2");
+      }
+    </script>
+    <body onload="init()">
+      <svg id="gfx" viewBox="0 0 150 100" style="width:100vw; height: 50vh;"></svg>
+      <div id="answers">
+        <div>Part1: <span id="part1"/><button onclick="part1()">calculate</button></span>
+        <div>Part2: <span id="part2"/><button onclick="part2()">calculate</button></span>
+      </div>
+      <div id="logs">
+      </div>
+    </body>
+</html>
