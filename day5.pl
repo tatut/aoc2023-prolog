@@ -92,39 +92,41 @@ mapranges(Mappings, Range, [Range]) :-
          member(S, Sources),
          overlaps(S, Range) ).
 
-mapranges(Mappings, RStart-REnd, Ranges) :-
-     convlist({RStart-REnd}/[r(DstStart-DstEnd,SrcStart-SrcEnd),Start-End]>>
-              ( Lo is max(SrcStart, RStart),
-                Hi is min(SrcEnd, REnd),
-                Shift is DstStart - SrcStart,
-                Lo =< Hi,
-                Start is Lo + Shift, End is Hi + Shift ),
-              Mappings, Ranges0),
+% With Mappings being all the mappings, and r(..) being a single mapping
+% and Rs-Re being a range to map, succeed with Start-End being
+% the part before, the part after, or the common part.
+mapped_range_part(_, r(DstS-_,SrcS-SrcE), Rs-Re, Start-End) :-
+    overlaps(SrcS-SrcE, Rs-Re), % this overlaps
+    Lo is max(SrcS, Rs),
+    Hi is min(SrcE, Re),
+    Shift is DstS - SrcS,
+    Lo =< Hi,
+    Start is Lo + Shift, End is Hi + Shift.
 
-     length(Ranges0, L), L > 0, % Ensure some was found
+% The before part, recursively map it
+mapped_range_part(Mappings, r(_,SrcS-SrcE), Rs-Re, Before) :-
+    overlaps(SrcS-SrcE, Rs-Re), Rs < SrcS, % this overlaps and starts before
+    SrcS1 is SrcS - 1,
+    mapped_range(Mappings, Rs-SrcS1, Before).
 
-     % Add any part of input before any src mapping
-     maplist([r(_,SrcStart-_),SrcStart]>>true, Mappings, SrcStarts),
-     min_list(SrcStarts, SrcStartMin),
-     (RStart < SrcStartMin -> (SrcStart1 is SrcStartMin - 1, Before=[RStart-SrcStart1]); Before=[]),
+% The after part, recursively map it
+mapped_range_part(Mappings, r(_,SrcS-SrcE), Rs-Re, After) :-
+    overlaps(SrcS-SrcE, Rs-Re), SrcE < Re, % this overlaps and ends after
+    SrcE1 is SrcE + 1,
+    mapped_range(Mappings, SrcE1-Re, After).
 
-     % Add any part of input after any src mapping
-     maplist([r(_,_-SrcEnd),SrcEnd]>>true, Mappings, SrcEnds),
-     max_list(SrcEnds, SrcEndMax),
-     (REnd > SrcEndMax -> (SrcEnd1 is SrcEndMax + 1, After=[SrcEnd1-REnd]); After=[]),
+mapped_range(Mappings, Range0, Range0) :- \+ (member(r(_,Src),Mappings), overlaps(Src,Range0)).
+mapped_range(Mappings, Range0, Range1) :-
+    member(M, Mappings),
+    mapped_range_part(Mappings, M, Range0, Range1), !.
 
-     % Put everything together
-     append([Before,After], OtherParts),
-     maplist(mapranges(Mappings), OtherParts, OtherRanges),
-     append([OtherRanges, Ranges0], Ranges).
 
 % Map the current ranges for Src->Dst and recurse to the next type
 solve(Almanac, SrcType, DstType, Ranges, Ans) :-
     mapping(Almanac, SrcType, DstType, Mappings),
-    maplist(mapranges(Mappings), Ranges, NewRanges),
-    flatten(NewRanges, NewRangesFlat),
+    findall(R1, (member(R0,Ranges),mapped_range(Mappings,R0,R1)), NewRanges),
     next_type(DstType, NextType),
-    solve(Almanac, DstType, NextType, NewRangesFlat, Ans).
+    solve(Almanac, DstType, NextType, NewRanges, Ans).
 
 % Final step, sort ranges and get start
 solve(_, location, _, Rs, Out) :- sort(Rs,[Out-_|_]).
