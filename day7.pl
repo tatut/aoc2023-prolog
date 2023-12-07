@@ -1,3 +1,4 @@
+:- module(day7).
 :- use_module(library(dcg/basics)).
 % represent hand as a list of cards
 
@@ -116,3 +117,11 @@ part2(Ans) :-
     maplist([R-hand_bid(_,Bid),W]>>(W is R*Bid), Enumerated, Wins),
     sum_list(Wins, Ans).
 % part2(252137472).
+
+:- begin_tests(day7).
+:- use_module(day7).
+
+test(part1) :- part1(249483956).
+test(part2) :- part2(252137472).
+
+:- end_tests(day7).
