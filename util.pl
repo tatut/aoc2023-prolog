@@ -48,6 +48,11 @@ heads(Lst, [Lst|RestOfHeads]) :-
     [_|Rest] = Lst,
     heads(Rest, RestOfHeads).
 
-
-every(_, []).
-every(Pred, [X|Xs]) :- call(Pred, X), every(Pred, Xs).
+split2(File, Split1, Split2, ParseItem, ListOfLists) :-
+    read_file_to_string(File, Str, []),
+    split_string(Str, Split1, "", Lines),
+    convlist({Split2,ParseItem}/[Line,Items]>>(
+                 \+ Line = "", % don't try to parse last empty line
+                 split_string(Line, Split2, " ", ItemStrs),
+                 maplist(ParseItem, ItemStrs, Items)),
+             Lines, ListOfLists).
