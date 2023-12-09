@@ -41,22 +41,20 @@ numbers(G, num(Number, X-X1, Y)) :-
     number_end(G, X, Y, X1),
     number_value(G, X-X1, Y, Number).
 
+is_digit_x(G, Y, X) :- at(G, X, Y, Cd), digit(Cd).
+
 number_end(G, X, Y, X1) :-
     between(X, inf, X1),
     numlist(X,X1,Xs),
-    every([Xd]>>(at(G,Xd,Y,Cd),digit(Cd)), Xs),
+    maplist(is_digit_x(G,Y), Xs),
     Right is X1 + 1,
     at(G, Right, Y, RCs),
     \+ digit(RCs), !.
-
 
 number_value(G, Xs-Xe, Y, N) :-
     numlist(Xs, Xe, Xpos),
     maplist(at_x(G,Y), Xpos, Cs),
     number_codes(N, Cs).
-
-every(_, []).
-every(Pred, [X|Xs]) :- call(Pred, X), every(Pred, Xs).
 
 % Check if there is a symbol adjacent to any position
 part_number(G, num(_, Xs-Xe, Y)) :-
