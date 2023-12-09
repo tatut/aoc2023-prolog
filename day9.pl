@@ -1,6 +1,6 @@
 :- use_module(util).
 
-histories(Hs) :- util:split2('day9.txt', "\n", " ", [S,N]>>number_string(N,S), Hs).
+histories(Hs) :- util:file('day9.txt', S), util:split2(S, ".+\n", "-?\\d+"/n, Hs).
 
 deltas([_],[]).
 deltas([A,B|Cs], [D|Rest]) :- D is B - A, deltas([B|Cs], Rest).

@@ -48,11 +48,13 @@ heads(Lst, [Lst|RestOfHeads]) :-
     [_|Rest] = Lst,
     heads(Rest, RestOfHeads).
 
-split2(File, Split1, Split2, ParseItem, ListOfLists) :-
-    read_file_to_string(File, Str, []),
-    split_string(Str, Split1, "", Lines),
-    convlist({Split2,ParseItem}/[Line,Items]>>(
-                 \+ Line = "", % don't try to parse last empty line
-                 split_string(Line, Split2, " ", ItemStrs),
-                 maplist(ParseItem, ItemStrs, Items)),
-             Lines, ListOfLists).
+file(File, Str) :- read_file_to_string(File, Str, []).
+
+split2_matches([], []).
+split2_matches([_Skip], []).
+split2_matches([_Skipped,Match|Rest], [Match|Matches]) :- split2_matches(Rest, Matches).
+
+split2(Str, Re1, Re2, ListOfLists) :-
+    re_split(Re1, Str, Matches), split2_matches(Matches, Lines),
+    maplist({Re2}/[Line,Items]>>( re_split(Re2, Line, Ms), split2_matches(Ms, Items) ),
+            Lines, ListOfLists).
