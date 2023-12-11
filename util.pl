@@ -58,3 +58,7 @@ split2(Str, Re1, Re2, ListOfLists) :-
     re_split(Re1, Str, Matches), split2_matches(Matches, Lines),
     maplist({Re2}/[Line,Items]>>( re_split(Re2, Line, Ms), split2_matches(Ms, Items) ),
             Lines, ListOfLists).
+
+enumerate(_,[],[]).
+enumerate(I,[X|Xs],[I-X|Rest]) :- I1 is I + 1, enumerate(I1, Xs,Rest).
+enumerate(Lst,Enumerated) :- enumerate(1, Lst, Enumerated).
