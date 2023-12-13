@@ -62,3 +62,15 @@ split2(Str, Re1, Re2, ListOfLists) :-
 enumerate(_,[],[]).
 enumerate(I,[X|Xs],[I-X|Rest]) :- I1 is I + 1, enumerate(I1, Xs,Rest).
 enumerate(Lst,Enumerated) :- enumerate(1, Lst, Enumerated).
+
+counts(List, Counts) :- msort(List, Items), clumped(Items, Counts).
+
+repeat(1, _, _, Done, Done).
+repeat(N, Sep, Items, Acc, Done) :-
+    N > 1, succ(N1, N),
+    append(Acc,Sep,Acc1),
+    append(Acc1,Items,Acc2),
+    repeat(N1, Sep, Items, Acc2, Done).
+
+repeat(Times, Lst, Repeated) :- repeat(Times, [], Lst, Lst, Repeated).
+repeat(Times, Sep, Lst, Repeated) :- repeat(Times, Sep, Lst, Lst, Repeated).
