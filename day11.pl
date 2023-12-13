@@ -36,15 +36,18 @@ col_dist(X, N) :- empty_col(X), expansion_factor(N).
 row_dist(Y, 1) :- \+ empty_row(Y).
 row_dist(Y, N) :- empty_row(Y), expansion_factor(N).
 
-pairs(Gs, Pairs) :-
-    findall(Pair, (select(G0, Gs, R), select(G1, R, _),
-                   sort([G0,G1], Pair)), Pairs0),
-    sort(Pairs0, Pairs).
+% Backtrack through all unique pairs
+pair(Gs, [G0,G1]) :-
+    length(Gs, Last),
+    between(1,Last, I),
+    N is I + 1,
+    between(N,Last,J),
+    nth1(I, Gs, G0),
+    nth1(J, Gs, G1).
 
-distances(Gs, Dist) :-
-    pairs(Gs, Pairs),
-    length(Pairs, Len), writeln(pairs(Len)),
-    maplist([[G0,G1],D]>>dist(G0,G1,D), Pairs, Dist).
+% Dist is some distance between two galaxies,
+% backtracks to produce all pairs
+distance(Gs, Dist) :- pair(Gs, [G0,G1]), dist(G0,G1,Dist).
 
 xdist(X, X, 0).
 xdist(X1,X2, D) :-
@@ -75,9 +78,7 @@ set_expansion_factor(N) :-
 
 part(ExpFactor, Ans) :-
     in(G), prepare(G), set_expansion_factor(ExpFactor),
-    writeln(prepared),
-    distances(G, Dists),
-    sum_list(Dists, Ans).
+    aggregate_all(sum(D), distance(G, D), Ans).
 
-part1(Ans) :- part(2, Ans).
-part2(Ans) :- part(1000000, Ans).
+part1(Ans) :- part(2, Ans). % part1(9965032).
+part2(Ans) :- part(1000000, Ans). % part2(550358864332).
