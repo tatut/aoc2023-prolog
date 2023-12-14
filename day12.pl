@@ -1,5 +1,5 @@
 :- use_module(util).
-:- use_module(library(nb_hashtbl)).
+:- table configs/3.
 
 parse_row(Str, Line-Damaged) :-
     split_string(Str, " ", "", [LinePart,DmgPart]),
@@ -50,40 +50,27 @@ damaged_run([C|Line], D, Rest) :- D > 1, \+ working(C),
                                   D1 is D - 1,
                                   damaged_run(Line, D1, Rest).
 
-
-
-config(Cache,I,J, Row, Solutions) :-
-    (nb_hashtbl_get(Cache, I-J, Solutions);
-     (configs(Cache, I,J, Row, Solutions),
-      nb_hashtbl_set(Cache, I-J, Solutions))).
-
-configs(_,_,_,[]-[], 1). % No more line or contiguous, this solution works!
-configs(_,_,_,[]-[_|_], 0). % some dmgs unused
-configs(_,_,_,[35|_]-[], 0). % still damaged, but groups used
-configs(_,_,_,[35|Line]-[D|_], 0) :- \+ damaged_run(Line, D, _).
-configs(Cache,I,J,[35|Line]-[D|Dmgs], Solutions) :- % # must be part of damaged
+configs([], [], 1). % No more line or contiguous, this solution works!
+configs([], [_|_], 0). % some dmgs unused
+configs([35|_], [], 0). % still damaged, but groups used
+configs([35|Line], [D|_], 0) :- \+ damaged_run(Line, D, _).
+configs([35|Line], [D|Dmgs], Solutions) :- % # must be part of damaged
     damaged_run(Line, D, RestOfLine),
-    I1 is I + D, J1 is J + 1,
-    config(Cache, I1, J1, RestOfLine-Dmgs, Solutions).
-configs(Cache,I,J, [63|Line]-Dmgs, Solutions) :- % ?
-    %show(encounter_unknown, [63|Line]),
-    config(Cache,I,J,[35|Line]-Dmgs, S1), % ? might be a # (35)
-    I1 is I + 1,
-    config(Cache,I1, J, Line-Dmgs, S2),      % ? might be a ., recurse
+    configs(RestOfLine, Dmgs, Solutions).
+configs([63|Line], Dmgs, Solutions) :- % ?
+    configs([35|Line], Dmgs, S1), % ? might be a # (35)
+    configs(Line, Dmgs, S2),      % ? might be a ., recurse
     Solutions is S1 + S2.
-configs(Cache,I,J,[46|Line]-Dmgs, Solutions) :- % .
-    I1 is I + 1,
-    config(Cache,I1, J, Line-Dmgs, Solutions).
+configs([46|Line], Dmgs, Solutions) :- % .
+    configs(Line, Dmgs, Solutions).
 
 count_possible_configurations2(Line-Dmgs, Solutions) :-
-    empty_nb_hashtbl(Cache),
-    config(Cache, 0,0,Line-Dmgs, Solutions).
+    configs(Line, Dmgs, Solutions).
 
 part2(Total) :-
     in(Rows),
     foldl([Row,Sum0,Sum1]>>(times5(Row,Row5x),
                             count_possible_configurations2(Row5x, C),
                             Sum1 is Sum0 + C), Rows, 0, Total).
-
 
 % part2(45322533163795).
