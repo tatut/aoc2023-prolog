@@ -74,3 +74,23 @@ repeat(N, Sep, Items, Acc, Done) :-
 
 repeat(Times, Lst, Repeated) :- repeat(Times, [], Lst, Lst, Repeated).
 repeat(Times, Sep, Lst, Repeated) :- repeat(Times, Sep, Lst, Lst, Repeated).
+
+% Split list at first occurence of Sep, binding Before and After
+split_at(_, [], [], []).
+split_at(Sep, [Item|Items], [Item|Before], After) :-
+    \+ Sep = Item,
+    split_at(Sep, Items, Before, After).
+split_at(Sep, [Sep|Items], [], Items).
+
+% Determine a ListOfLists of Input separated by Sep
+split_by(_, [], []). % Done
+split_by(Sep, Lst, [Before|Lists]) :-
+    \+ Lst = [],
+    split_at(Sep, Lst, Before, After),
+    split_by(Sep, After, Lists).
+
+dotimes(N,N,Goal) :- call(Goal,N).
+dotimes(Lo,Hi,Goal) :- Lo < Hi,
+                       call(Goal,Lo),
+                       succ(Lo,Lo1),
+                       dotimes(Lo1,Hi,Goal).
