@@ -39,8 +39,7 @@ cycle(In,Out) :-
     tiltmap(G5, G6), rotate_ccw(G6, Out), !.
 
 run_cycles(G, Load) :-
-    ht_new(Hash),
-    run_cycles_(G, Hash, 1_000_000_000, Load).
+    run_cycles_(G, [], 1_000_000_000, Load).
 
 iterate(0, _, In,In).
 iterate(N, Goal, In, Out) :- N > 0, succ(N1, N),
@@ -52,16 +51,14 @@ run_cycles_(G, Hashes, RoundsRemaining, Load) :-
     ThisRound is 1_000_000_000 - RoundsRemaining,
     cycle(G, G1),
     term_hash(G1, H),
-    ( ht_get(Hashes, H, PrevRound)
+    ( memberchk(PrevRound-H, Hashes)
     -> ( % found previous hash
-        writeln(found_same_hash(this(ThisRound), prev(PrevRound))),
-        RoundsRem is (RoundsRemaining-1) mod (ThisRound-PrevRound),
-        writeln(modulo_rounds_rem(RoundsRem)),
+        CycleLen is ThisRound-PrevRound,
+        RoundsRem is (RoundsRemaining-1) mod CycleLen,
         iterate(RoundsRem, cycle, G1, GFinal), !,
         loadsum(GFinal, Load))
-    ; ( ht_put(Hashes, H, ThisRound),
-        RoundsRem is RoundsRemaining - 1, !,
-        run_cycles_(G1, Hashes, RoundsRem, Load) )).
+    ; ( RoundsRem is RoundsRemaining - 1, !,
+        run_cycles_(G1, [ThisRound-H|Hashes], RoundsRem, Load) )).
 
 part2(Ans) :- in(G), run_cycles(G, Ans).
 % part2(104671).
