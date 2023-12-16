@@ -32,11 +32,9 @@ part1(Ans) :-
 % part1(108889).
 
 rotate_ccw(In, Out) :- transpose(In, Out0), reverse(Out0, Out).
-cycle(In,Out) :-
-    tiltmap(In, G0), rotate_ccw(G0, G1),
-    tiltmap(G1, G2), rotate_ccw(G2, G3),
-    tiltmap(G3, G4), rotate_ccw(G4, G5),
-    tiltmap(G5, G6), rotate_ccw(G6, Out), !.
+tilt_and_rotate_ccw(In, Out) :- tiltmap(In, Tilted), rotate_ccw(Tilted, Out).
+
+cycle(In,Out) :- iterate(4, tilt_and_rotate_ccw, In, Out).
 
 run_cycles(G, Load) :-
     run_cycles_(G, [], 1_000_000_000, Load).
