@@ -23,11 +23,11 @@ travel(G, X,Y, Dir, Visited, Energize) :-
 
 energize(S, X, Y) :- add_nb_set(X-Y, S).
 
-energized_count(G, X, Y, Dir, Count) :-
+energized_count(G, [X, Y, Dir], Count) :-
     empty_nb_set(S), empty_nb_set(V),
     aggregate(max(Size), ( travel(G, X,Y,Dir, V, energize(S)), size_nb_set(S, Size) ), Count).
 
-part1(Ans) :- in(G), energized_count(G, 1, 1, r, Ans).
+part1(Ans) :- in(G), energized_count(G, [1, 1, r], Ans).
 
 % part1(6361).
 
@@ -40,5 +40,8 @@ edge_tile(g(_,H,_), 1, Y, r) :- between(1,H,Y). % right from left edge
 edge_tile(g(W,H,_), W, Y, l) :- between(1,H,Y). % left from right edge
 
 part2(Ans) :-
-    in(G), aggregate_all(max(E), (edge_tile(G, X, Y, D), energized_count(G, X,Y,D, E)), Ans).
+    in(G),
+    findall([X,Y,D], edge_tile(G, X, Y, D), Beams),
+    concurrent_maplist(energized_count(G), Beams, Counts),
+    max_list(Counts, Ans).
 % part2(6701).
