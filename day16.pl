@@ -2,7 +2,6 @@
 
 in(G) :- grid_from_file('day16.txt', G).
 
-
 % dir(Char, Dir, NewDir) to determine next travel direction(s)
 dir(46, Dir, Dir). % .
 dir(47, r, u). dir(47, l, d). dir(47, d, l). dir(47, u, r). % /
@@ -11,21 +10,18 @@ dir(45, r, r). dir(45, l, l). dir(45, u, l). dir(45, u, r). dir(45, d, l). dir(4
 dir(124, u, u). dir(124, d, d). dir(124, l, u). dir(124, l, d). dir(124, r, u). dir(124, r, d). % |
 
 % Travel beam at position in direction
-
 travel(G, X,Y, _, _, _) :- \+ pos(G, X, Y, _). % outside mirror
 travel(G, X,Y, Dir, Visited, Energize) :-
     at(G, X, Y, Here),
     add_nb_set(v(X,Y,Dir), Visited, true),
-    call(Energize, X,Y), % Energize this location
+    add_nb_set(X-Y, Energize), % Energize this location
     dir(Here, Dir, Dir1),
     move(X,Y, Dir1, X1,Y1),
     travel(G, X1, Y1, Dir1, Visited, Energize).
 
-energize(S, X, Y) :- add_nb_set(X-Y, S).
-
 energized_count(G, [X, Y, Dir], Count) :-
     empty_nb_set(S), empty_nb_set(V),
-    aggregate(max(Size), ( travel(G, X,Y,Dir, V, energize(S)), size_nb_set(S, Size) ), Count).
+    aggregate(max(Size), ( travel(G, X,Y,Dir, V, S), size_nb_set(S, Size) ), Count).
 
 part1(Ans) :- in(G), energized_count(G, [1, 1, r], Ans).
 
