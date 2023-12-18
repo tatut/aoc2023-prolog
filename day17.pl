@@ -45,12 +45,13 @@ at_goal(s(X,Y,_,_), X-Y).
 distance(s(X1,Y1,_,_), X2-Y2, Dist) :- Dist is abs(X2-X1) + abs(Y2-Y1).
 
 % When the first in open set is the goal, reconstruct path
-astar(_, _, OpenSetIn, CameFrom, _, _, X-Y, [s(X,Y,end,0)|Path]) :-
+astar(_, _, OpenSetIn, CameFrom, GScores, _, X-Y, [s(X,Y,end,0)|Path], Cost) :-
     min_of_heap(OpenSetIn, _Priority, Current),
-    at_goal(Current, X-Y), writeln(found_end(X-Y)), !,
+    at_goal(Current, X-Y),
+    score(GScores, Current, Cost),
     came_from(CameFrom, Current, Path).
 
-astar(G, NeighborsGoal, OpenSetIn, CameFrom, GScores, FScores, Goal, Path) :-
+astar(G, NeighborsGoal, OpenSetIn, CameFrom, GScores, FScores, Goal, Path,Cost) :-
     get_from_heap(OpenSetIn, _Priority, Current, OpenSet),
     \+ at_goal(Current, Goal),
     call(NeighborsGoal, G, Current, Neighbors),
@@ -59,7 +60,6 @@ astar(G, NeighborsGoal, OpenSetIn, CameFrom, GScores, FScores, Goal, Path) :-
               heat(G, Neighbor, Weight), % weight of moving from current to neighbor
               TentativeGS is CurGS + Weight,
               score(GScores, Neighbor, OldGS),
-              %writeln(is_better(TentativeGS, OldGS)),
               (TentativeGS < OldGS
               % better than existing GS, replace
               -> ( ht_put(CameFrom, Neighbor, Current),
@@ -73,23 +73,19 @@ astar(G, NeighborsGoal, OpenSetIn, CameFrom, GScores, FScores, Goal, Path) :-
               ; ( Opens1 = Opens0 ))),
           Neighbors, OpenSet, OpenSet1),
     !,
-    astar(G, NeighborsGoal, OpenSet1, CameFrom, GScores, FScores, Goal, Path).
+    astar(G, NeighborsGoal, OpenSet1, CameFrom, GScores, FScores, Goal, Path,Cost).
 
-astar(G, NeighborsGoal, Start, Goal, Path) :-
+astar(G, NeighborsGoal, Start, Goal, Path,Cost) :-
     ht_new(CameFrom), ht_new(GScores), ht_new(FScores),
     ht_put(GScores, Start, 0),
     distance(Start, Goal, Dist),
     ht_put(FScores, Start, Dist),
     list_to_heap([0-Start], OpenSet),
-    astar(G, NeighborsGoal, OpenSet, CameFrom, GScores, FScores, Goal, Path).
+    astar(G, NeighborsGoal, OpenSet, CameFrom, GScores, FScores, Goal, Path,Cost).
 
-part(NeighborsGoal, Ans) :-
+part(NeighborsGoal, Cost) :-
     in(G), grid:size(G, W, H),
-    astar(G, NeighborsGoal, s(1,1,r,0), W-H, Path),
-    maplist([s(X,Y,_,_),X-Y]>>true, Path, Positions),
-    sort(Positions, [_|Sorted]),
-    maplist({G}/[X-Y,H]>>heat_at(G,X,Y,H), Sorted, Heat),
-    sumlist(Heat, Ans).
+    astar(G, NeighborsGoal, s(1,1,r,0), W-H, _,Cost).
 
 part1(Ans) :- part(neighbors, Ans).
 % part1(1023).
