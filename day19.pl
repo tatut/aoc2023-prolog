@@ -2,15 +2,13 @@
 :- set_prolog_flag(double_quotes, codes).
 
 %%% Parsing
-atom_without(Without, Atom) --> string_without(Without, AtomCs),
-                                { length(AtomCs, L),
-                                  L > 0,
-                                  atom_codes(Atom, AtomCs) }.
+atom_without(Without, Atom) -->
+    string_without(Without, AtomCs),
+    { length(AtomCs, L), L > 0, atom_codes(Atom, AtomCs) }.
 
 action(accept) --> "A".
 action(reject) --> "R".
-action(to(Name)) --> atom_without("},:", Name),
-                     { Name \= 'A', Name \= 'R' }.
+action(to(Name)) --> atom_without("AR},:", Name).
 
 workflows([]) --> eol.
 workflows([Wf|Workflows]) --> workflow(Wf), eol, workflows(Workflows).
@@ -31,9 +29,7 @@ part([x=X,m=M,a=A,s=S]) --> "{x=",integer(X),",m=",integer(M),
 parts([]) --> eos.
 parts([P|Parts]) --> part(P), eol, parts(Parts).
 
-input(Workflows,Parts) --> workflows(Workflows),
-                           %{ writeln(Workflows) },
-                           parts(Parts).
+input(Workflows,Parts) --> workflows(Workflows), parts(Parts).
 
 in(Wfs,Ps) :- phrase_from_file(input(Wfs,Ps), 'day19.txt').
 
@@ -72,6 +68,7 @@ part1(Answer) :-
     convlist({Wfs}/[P,P]>>eventually_accepted(Wfs,P), Ps, Accepted),
     maplist(rating_sum, Accepted, Ratings),
     sum_list(Ratings, Answer).
+% part1(391132).
 
 %% Part 2 count the number of distinct paths
 %% any attr can have value from 1 - 4000
@@ -105,15 +102,12 @@ matching(if(Attr, <, Val), Counts0, Counts1) :-
     High1 is min(High0, Val1),
     Low0 =< High1.
 
-non_matching(true, _, [x=0,m=0,a=0,s=0]). % nothing is non-matching
 non_matching(if(Attr, <, Val), Ranges, NonMatching) :-
     succ(Val1, Val),
     matching(if(Attr, >, Val1), Ranges, NonMatching).
 non_matching(if(Attr, >, Val), Ranges, NonMatching) :-
     succ(Val, Val1),
     matching(if(Attr, <, Val1), Ranges, NonMatching).
-
-accepted_paths(_, [], _, 0). % no rules, should not happen?
 
 % Accept: succeeds with the matching count
 % and recurses with the non-matching
@@ -140,8 +134,7 @@ accepted_paths(Wfs, [r(If,to(_))|Rest], Ranges, Count) :-
     non_matching(If, Ranges, NonMatching),
     accepted_paths(Wfs, Rest, NonMatching, Count).
 
-
-
 part2(Ans) :-
     in(Wfs, _),
     all_accepted_paths(Wfs, Ans).
+% part2(128163929109524).
